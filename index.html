@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F1F3EA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="루틴 노트">
+<title>루틴 노트</title>
+<style>
+  :root{
+    --paper:#F1F3EA; --card:#FFFFFF; --ink:#17231D; --ink-2:#4A5A50; --pencil:#8A9689;
+    --rule:rgba(63,107,78,.16); --grid:rgba(63,107,78,.09); --line:rgba(23,35,29,.14);
+    --seal:#C8402E; --seal-soft:rgba(200,64,46,.10);
+    --mono:ui-monospace,"SF Mono",Menlo,"Roboto Mono","D2Coding",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+    --serif:"Nanum Myeongjo","AppleMyungjo",Batang,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background-color:var(--paper);
+    background-image:
+      repeating-linear-gradient(to right,var(--grid) 0 1px,transparent 1px 26px),
+      repeating-linear-gradient(to bottom,var(--grid) 0 1px,transparent 1px 26px);
+    color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.55;
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:calc(26px + env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom))}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--pencil);text-transform:uppercase}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.03em;margin:2px 0 0}
+  .rule{border:0;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);height:3px;margin:14px 0 16px;opacity:.55}
+  .top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .gear{background:none;border:1px solid var(--line);border-radius:6px;width:38px;height:38px;cursor:pointer;
+        font-size:15px;color:var(--ink-2);flex:none;margin-top:6px}
+  .sync{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--pencil);margin:0 0 18px;display:flex;align-items:center;gap:6px}
+  .sync b{width:6px;height:6px;border-radius:50%;background:var(--pencil);display:inline-block}
+  .sync.ok b{background:#3F6B4E} .sync.off b{background:var(--seal)} .sync.busy b{background:#C9971F}
+  .sync button{background:none;border:0;padding:0;font:inherit;color:var(--seal);text-decoration:underline;cursor:pointer}
+
+  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:24px}
+  .wd{aspect-ratio:1/1.15;border:1px solid var(--line);background:var(--card);border-radius:5px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative}
+  .wd b{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--pencil)}
+  .wd i{font-family:var(--mono);font-size:13px;font-style:normal;font-weight:600}
+  .wd.today{background:var(--ink);border-color:var(--ink)}
+  .wd.today b,.wd.today i{color:var(--paper)}
+  .wd .mark{position:absolute;bottom:5px;width:6px;height:6px;border-radius:50%;background:var(--seal)}
+  .wd.today .mark{background:#E9A196}
+
+  .sec{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 10px}
+  .sec span{font-family:var(--mono);font-size:11px;color:var(--pencil);letter-spacing:.1em}
+  .sec h2{font-size:14px;font-weight:700;margin:0;letter-spacing:-.01em}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px 16px 14px;margin-bottom:10px;
+        position:relative;overflow:hidden;width:100%;text-align:left;font:inherit;color:inherit;display:block;cursor:pointer}
+  .card:active{transform:translateY(1px)}
+  .card .days{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--pencil)}
+  .card h3{margin:4px 0 2px;font-size:18px;font-weight:700;letter-spacing:-.02em}
+  .card p{margin:0;font-size:13px;color:var(--ink-2)}
+  .card .meter{margin-top:12px;height:3px;background:var(--rule);border-radius:2px;overflow:hidden}
+  .card .meter i{display:block;height:100%;background:var(--ink);width:0;transition:width .35s ease}
+  .card.off{opacity:.62} .card.done{border-color:rgba(200,64,46,.35)}
+
+  .seal{position:absolute;top:12px;right:12px;width:46px;height:46px;border:2px solid var(--seal);border-radius:50%;
+        color:var(--seal);font-family:var(--serif);font-size:22px;font-weight:700;
+        display:flex;align-items:center;justify-content:center;transform:rotate(-9deg);
+        background:var(--seal-soft);letter-spacing:-.05em}
+  .stamp{animation:stamp .38s cubic-bezier(.2,1.4,.4,1) both}
+  @keyframes stamp{0%{transform:rotate(-24deg) scale(2.1);opacity:0}55%{opacity:1}100%{transform:rotate(-9deg) scale(1);opacity:1}}
+  @media (prefers-reduced-motion:reduce){.stamp{animation:none}*{transition:none!important}}
+
+  .sheet{position:fixed;inset:0;background:var(--paper);overflow-y:auto;z-index:20;animation:up .26s ease both;
+         background-image:repeating-linear-gradient(to right,var(--grid) 0 1px,transparent 1px 26px),
+                          repeating-linear-gradient(to bottom,var(--grid) 0 1px,transparent 1px 26px)}
+  @keyframes up{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+  .back{background:none;border:0;padding:6px 0;font:inherit;font-family:var(--mono);font-size:12px;color:var(--ink-2);cursor:pointer;letter-spacing:.06em}
+  .count{font-family:var(--mono);font-size:12px;color:var(--pencil);letter-spacing:.08em}
+
+  .dots{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-bottom:18px}
+  .dots i{height:4px;border-radius:2px;background:var(--rule)}
+  .dots i.f{background:var(--ink)} .dots i.c{background:var(--seal)}
+  .ko{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--ink);border-radius:6px;
+      padding:18px 16px;font-size:19px;font-weight:600;letter-spacing:-.02em;line-height:1.6;min-height:96px;display:flex;align-items:center}
+  .hintrow{display:flex;justify-content:flex-end;margin:8px 0 4px}
+  .hint{background:none;border:0;font:inherit;font-size:12px;color:var(--pencil);cursor:pointer;font-family:var(--mono);letter-spacing:.06em;padding:4px}
+  .hint.on{color:var(--seal)}
+  textarea.en{width:100%;border:1px solid var(--line);border-radius:6px;background:var(--card);
+     background-image:repeating-linear-gradient(transparent 0 31px,var(--rule) 31px 32px);
+     background-position:0 12px;background-attachment:local;
+     padding:9px 14px 12px;font:inherit;font-size:17px;line-height:32px;color:var(--ink);
+     min-height:140px;resize:none;outline:none;font-family:var(--mono);letter-spacing:-.01em}
+  textarea.en:focus{border-color:var(--ink)}
+  .nav{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+  .btn{border:1px solid var(--ink);background:var(--card);color:var(--ink);border-radius:6px;padding:14px;
+       font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+  .btn:disabled{opacity:.32;cursor:default}
+  .btn.solid{background:var(--ink);color:var(--paper)}
+  .btn.red{background:var(--seal);border-color:var(--seal);color:#fff}
+  .btn.ghost{border-color:var(--line);color:var(--ink-2);font-weight:500;font-size:13px;padding:11px}
+  .wide{width:100%;margin-top:8px}
+
+  .fb{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:8px}
+  .fb .n{font-family:var(--mono);font-size:11px;color:var(--pencil);letter-spacing:.1em}
+  .fb .k{font-size:14px;font-weight:600;margin:4px 0 8px}
+  .fb .m{font-family:var(--mono);font-size:14px;background:rgba(63,107,78,.06);padding:8px 10px;border-radius:4px;line-height:1.5}
+  .fb .y{font-family:var(--mono);font-size:13px;color:var(--pencil);margin-top:6px;word-break:break-word}
+  .fb .c{font-size:13px;color:var(--seal);margin-top:8px;line-height:1.5}
+
+  .qgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:4px 0 18px}
+  .q{aspect-ratio:1;border:1px solid var(--line);background:var(--card);border-radius:5px;cursor:pointer;
+     font-family:var(--mono);font-size:14px;font-weight:600;color:var(--pencil);display:flex;align-items:center;justify-content:center;position:relative}
+  .q.o{border-color:var(--ink);color:var(--ink)}
+  .q.o::after{content:"○";position:absolute;font-size:26px;color:rgba(23,35,29,.85)}
+  .q.x{border-color:var(--seal);color:var(--seal)}
+  .q.x::after{content:"×";position:absolute;font-size:26px;color:var(--seal)}
+  .q.o span,.q.x span{opacity:.28}
+  .score{display:flex;align-items:baseline;gap:8px;margin-bottom:16px}
+  .score b{font-family:var(--mono);font-size:38px;font-weight:700;letter-spacing:-.04em}
+  .score em{font-family:var(--mono);font-style:normal;font-size:14px;color:var(--pencil)}
+  input.memo,textarea.memo{width:100%;border:1px solid var(--line);border-radius:6px;background:var(--card);
+     padding:12px 14px;font:inherit;font-size:15px;color:var(--ink);outline:none;resize:vertical}
+  input.memo:focus,textarea.memo:focus{border-color:var(--ink)}
+  label.lbl{display:block;font-family:var(--mono);font-size:11px;color:var(--pencil);letter-spacing:.12em;margin:18px 0 7px}
+
+  .clock{display:flex;align-items:center;justify-content:center;padding:26px 0 20px}
+  .ring{position:relative;width:210px;height:210px}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .ring .t b{font-family:var(--mono);font-size:44px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .ring .t span{font-family:var(--mono);font-size:11px;color:var(--pencil);letter-spacing:.14em}
+  .note{font-size:13px;color:var(--ink-2);margin:14px 0 0;line-height:1.6}
+  .foot{font-family:var(--mono);font-size:11px;color:var(--pencil);text-align:center;margin-top:26px;letter-spacing:.08em}
+  .spin{display:inline-block;width:11px;height:11px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-1px;margin-right:6px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .err{background:rgba(200,64,46,.07);border:1px solid rgba(200,64,46,.3);color:var(--seal);border-radius:6px;padding:12px 14px;font-size:13px;margin:12px 0;line-height:1.5}
+  .ok{background:rgba(63,107,78,.08);border:1px solid rgba(63,107,78,.3);color:#2F5A3E;border-radius:6px;padding:12px 14px;font-size:13px;margin:12px 0;line-height:1.5}
+</style>
+
+<div id="app"></div>
+
+<script>
+/* ══════════ 1. 저장 계층 ══════════ */
+const HAS_WS = typeof window.storage !== 'undefined';
+const MEM = {};
+const LS = (()=>{ try{ localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return localStorage; }catch(e){ return null; } })();
+
+const local = {
+  async get(k){
+    if(HAS_WS){ try{ const r = await window.storage.get(k); return r?JSON.parse(r.value):null; }catch(e){ return MEM[k]??null; } }
+    if(LS){ const v = LS.getItem(k); return v?JSON.parse(v):null; }
+    return MEM[k] ?? null;
+  },
+  async set(k,v){
+    MEM[k]=v;
+    if(HAS_WS){ try{ await window.storage.set(k, JSON.stringify(v)); }catch(e){} return; }
+    if(LS){ try{ LS.setItem(k, JSON.stringify(v)); }catch(e){} }
+  }
+};
+
+/* ══════════ 2. 시트 동기화 ══════════ */
+let cfg = {url:'', token:''};
+let syncState = 'local';   // local | ok | busy | off
+const dirty = new Set();
+let pushTimer = null;
+
+function setSync(s){
+  syncState = s;
+  const el = document.getElementById('sync');
+  if(el){ el.className = 'sync '+(s==='ok'?'ok':s==='off'?'off':s==='busy'?'busy':''); el.innerHTML = syncText(); }
+}
+function syncText(){
+  if(!cfg.url) return '<b></b>이 기기에만 저장 중 · <button onclick="go(\'set\')">연동 설정</button>';
+  if(syncState==='busy') return '<b></b>시트와 맞추는 중…';
+  if(syncState==='off')  return '<b></b>연결 안 됨 · 이 기기에 보관했다가 다시 올립니다';
+  return '<b></b>구글 시트에 동기화됨';
+}
+
+async function post(body){
+  const r = await fetch(cfg.url, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},   // 프리플라이트를 피하려면 text/plain
+    body: JSON.stringify(Object.assign({token:cfg.token}, body))
+  });
+  return r.json();
+}
+
+async function pull(){
+  if(!cfg.url) return;
+  setSync('busy');
+  try{
+    const r = await fetch(cfg.url+'?token='+encodeURIComponent(cfg.token)+'&action=all');
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error||'실패');
+    const remote = d.data || {};
+    let changed = false;
+    for(const k of ['log','recent','day:'+TKEY]){
+      if(!remote[k]) continue;
+      let rv; try{ rv = JSON.parse(remote[k]); }catch(e){ continue; }
+      const lv = await local.get(k);
+      if(!lv || (rv._ts||0) > (lv._ts||0)){ await local.set(k, rv); changed = true; }
+    }
+    if(changed){
+      day = Object.assign(blank(), await local.get('day:'+TKEY));
+      log = (await local.get('log')) || {};
+    }
+    setSync('ok');
+    if(changed && view==='home') render();
+  }catch(e){ setSync('off'); }
+}
+
+function markDirty(k){
+  dirty.add(k);
+  if(!cfg.url) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(push, 1200);
+}
+async function push(){
+  if(!cfg.url || !dirty.size) return;
+  const items = [];
+  for(const k of dirty){ const v = await local.get(k); if(v) items.push({key:k, value:JSON.stringify(v)}); }
+  setSync('busy');
+  try{
+    const d = await post({items});
+    if(!d.ok) throw new Error(d.error||'실패');
+    dirty.clear(); setSync('ok');
+  }catch(e){
+    setSync('off');
+    clearTimeout(pushTimer); pushTimer = setTimeout(push, 20000);
+  }
+}
+window.addEventListener('online', ()=>{ pull().then(push); });
+
+/* ══════════ 3. 날짜 ══════════ */
+const WD = ['일','월','화','수','목','금','토'];
+const pad = n => String(n).padStart(2,'0');
+const key = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const TODAY = new Date(), TKEY = key(TODAY), DOW = TODAY.getDay();
+const isTransDay = DOW===1||DOW===3||DOW===5;
+const isToeicDay = DOW===2||DOW===4||DOW===6;
+
+/* ══════════ 4. 모델 ══════════ */
+const blank = () => ({
+  trans:{ set:[], answers:Array(10).fill(''), fb:null, done:false },
+  toeic:{ marks:Array(20).fill(0), memo:'', done:false },
+  shadow:{ sec:0, at:'', done:false }
+});
+let day = blank(), log = {};
+
+async function saveDay(){
+  day._ts = Date.now();
+  log[TKEY] = { t:day.trans.done?1:0, k:day.toeic.done?1:0, s:day.shadow.done?1:0 };
+  log._ts = Date.now();
+  await local.set('day:'+TKEY, day);
+  await local.set('log', log);
+  markDirty('day:'+TKEY); markDirty('log');
+}
+
+/* ══════════ 5. 문장 생성 ══════════ */
+const FOCUS = [
+  '수일치 (every/each, 단수·복수)',
+  '구동사 (carry over, follow up, put off 등)',
+  '동명사를 목적어로 취하는 동사 (consider, suggest, avoid 등)',
+  '비교급 수식 표현 (far, considerably, few 등)',
+  '분사구문과 수동태',
+  '관계사절 (which, whose, in which)',
+  '가정법·조건절'
+];
+const TOPIC = ['사무실 일정 조율','거래처 이메일','채용·면접','재고와 배송','예산과 견적','고객 응대','출장과 숙박','계약과 갱신','장보기와 요리','병원과 약국','이사와 집수리','운동과 건강','여행 예약','은행과 보험','동네 카페와 약속'];
+
+const BANK = [
+  {ko:'이번 분기 보고서는 금요일까지 제출해야 한다고 들었어요.',focus:'be due by'},
+  {ko:'모든 직원이 새 보안 교육을 이수해야 합니다.',focus:'every employee is required'},
+  {ko:'회의가 다음 주로 미뤄졌다는 사실을 방금 알았어요.',focus:'put off'},
+  {ko:'그 안건은 다음 회계연도로 이월될 예정입니다.',focus:'carry over'},
+  {ko:'우리는 계약을 갱신하는 것을 진지하게 고려하고 있습니다.',focus:'consider renewing'},
+  {ko:'예상보다 훨씬 적은 지원자가 면접에 참석했어요.',focus:'far fewer applicants'},
+  {ko:'배송이 지연되어 고객들이 불만을 제기했습니다.',focus:'delayed shipment'},
+  {ko:'담당자가 자리를 비워서 제가 대신 처리하겠습니다.',focus:'on behalf of'},
+  {ko:'새 사무실은 역에서 걸어서 십 분 거리에 있습니다.',focus:'within walking distance'},
+  {ko:'그가 제안한 방식이 지금 방식보다 훨씬 효율적이에요.',focus:'considerably more efficient'},
+  {ko:'각 부서는 다음 주까지 예산안을 제출해야 합니다.',focus:'each department is'},
+  {ko:'그 계약서는 검토를 마치는 대로 서명될 것입니다.',focus:'as soon as'},
+  {ko:'출장 경비는 영수증을 제출하면 환급됩니다.',focus:'be reimbursed'},
+  {ko:'재고가 부족해서 주문을 다음 주로 나눠 보내려 합니다.',focus:'split the order'},
+  {ko:'그 문제를 다시 논의하기 위해 후속 회의를 잡았어요.',focus:'follow up'},
+  {ko:'신입 사원들은 첫 주에 대부분의 부서를 둘러봅니다.',focus:'be shown around'},
+  {ko:'견적서를 받는 대로 최종 금액을 알려 드리겠습니다.',focus:'once we receive'},
+  {ko:'이 조항은 양측이 서명한 날부터 효력이 발생합니다.',focus:'take effect'},
+  {ko:'회의실 예약은 최소 하루 전에 해 주시기 바랍니다.',focus:'at least a day in advance'},
+  {ko:'그녀가 맡았던 업무는 지금 다른 팀으로 넘어갔습니다.',focus:'be handed over'},
+  {ko:'저녁 먹기 전에 잠깐 장을 보고 올게요.',focus:'pick up groceries'},
+  {ko:'비가 올 것 같으니 우산을 챙기는 게 좋겠어요.',focus:"you'd better"},
+  {ko:'예약을 다음 주 화요일로 변경할 수 있을까요?',focus:'reschedule'},
+  {ko:'그 영화는 생각했던 것만큼 지루하지는 않았어요.',focus:'not as boring as'},
+  {ko:'짐을 다 옮기고 나서야 열쇠를 잃어버린 걸 알았어요.',focus:'only after'},
+  {ko:'저는 매일 아침 출근하기 전에 삼십 분씩 운동해요.',focus:'work out before'},
+  {ko:'약을 먹고 나서 두 시간 정도 지나야 효과가 나타납니다.',focus:'kick in'},
+  {ko:'이사한 집이 전에 살던 곳보다 훨씬 조용해서 만족해요.',focus:'much quieter than'},
+  {ko:'그 카페는 사람이 너무 많아서 결국 다른 곳으로 갔어요.',focus:'end up going'},
+  {ko:'항공권을 미리 예매했더라면 훨씬 저렴했을 텐데요.',focus:'would have been'},
+  {ko:'제가 추천한 식당은 예약이 벌써 꽉 차 있었습니다.',focus:'fully booked'},
+  {ko:'가족 여행을 가려고 휴가를 이틀 붙여서 냈어요.',focus:'take two days off'},
+  {ko:'그는 매주 토요일마다 헬스장에 가는 것을 거르지 않아요.',focus:'never skips'},
+  {ko:'설명서를 읽어도 조립 방법이 잘 이해되지 않았어요.',focus:'make sense of'},
+  {ko:'세탁기가 고장 나서 수리 기사를 부르기로 했습니다.',focus:'break down'},
+  {ko:'통장에서 자동으로 빠져나가는 보험료를 확인해야 해요.',focus:'be withdrawn automatically'}
+];
+const pick=(a,n)=>{const c=[...a],o=[];while(o.length<n&&c.length)o.push(c.splice(Math.floor(Math.random()*c.length),1)[0]);return o;};
+
+async function callClaude(prompt){
+  let text;
+  if(cfg.url){
+    const d = await post({action:'ai', prompt});
+    if(!d.ok) throw new Error(d.error);
+    text = d.text;
+  }else{
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1000, messages:[{role:'user',content:prompt}]})
+    });
+    const d = await r.json();
+    text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+  }
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+async function newSet(){
+  const focus = FOCUS[Math.floor(Math.random()*FOCUS.length)];
+  const topics = pick(TOPIC,5).join(', ');
+  const rec = (await local.get('recent')) || {list:[]};
+  const p =
+`한국인 영어 학습자를 위한 한→영 영작 연습 문제를 만든다. 한국어 문장 10개를 생성하라.
+
+조건
+- 영어로 옮길 때 토익 Part 5~6 수준(중급~중상급)의 어휘·문법이 필요한 문장
+- 오늘의 문법 초점: ${focus} — 10개 중 3~4개에 자연스럽게 녹여낼 것
+- 소재는 다음에서 고루 섞을 것: ${topics}
+- 각 문장은 한국어 25~55자, 완결된 한 문장
+- 번역투가 아닌 실제로 쓰는 자연스러운 한국어
+- 다음 문장들과 소재·구조가 겹치지 않게: ${(rec.list||[]).slice(0,20).join(' / ') || '없음'}
+- 무작위 시드 ${Math.random().toString(36).slice(2,8)}
+
+출력은 JSON 배열만. 설명·마크다운 없이:
+[{"ko":"한국어 문장","focus":"핵심 영어 표현 2~4단어"}]`;
+  try{
+    const arr = await callClaude(p);
+    const set = arr.filter(x=>x&&x.ko).slice(0,10);
+    if(set.length<10) throw 0;
+    const next = {list:[...set.map(s=>s.ko), ...(rec.list||[])].slice(0,40), _ts:Date.now()};
+    await local.set('recent', next); markDirty('recent');
+    return set;
+  }catch(e){ return pick(BANK,10); }
+}
+
+async function grade(){
+  const items = day.trans.set.map((s,i)=>({i:i+1, ko:s.ko, en:(day.trans.answers[i]||'').trim()}));
+  const out = [];
+  for(const c of [items.slice(0,5), items.slice(5,10)]){
+    const p =
+`한국인 학습자의 한→영 영작을 첨삭한다. 각 항목마다
+- model: 자연스럽고 시험에 통하는 모범 영작 한 문장
+- note: 한국어 한 줄 코멘트(45자 이내). 가장 중요한 오류 하나만 짚거나, 잘 썼으면 무엇이 좋았는지. 답이 비었으면 "미작성 — 모범답안 참고".
+
+${c.map(x=>`${x.i}. 한국어: ${x.ko}\n   학습자 영작: ${x.en||'(비어 있음)'}`).join('\n')}
+
+출력은 JSON 배열만. 설명·마크다운 없이:
+[{"i":1,"model":"...","note":"..."}]`;
+    try{ out.push(...await callClaude(p)); }catch(e){}
+  }
+  return out.length ? out : null;
+}
+
+/* ══════════ 6. 화면 ══════════ */
+const app = document.getElementById('app');
+let view='home', ti=0, hintOn=false, busy=false, errMsg='';
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const doneCount = () => day.trans.answers.filter(a=>a.trim()).length;
+
+function render(){
+  ({home,trans,toeic,shadow,set:settings}[view] || home)();
+}
+
+function home(){
+  const mon=new Date(TODAY); mon.setDate(TODAY.getDate()-((DOW+6)%7));
+  let week='';
+  for(let i=0;i<7;i++){
+    const d=new Date(mon); d.setDate(mon.getDate()+i);
+    const k=key(d), l=log[k], on=(l&&(l.t||l.k||l.s));
+    week+=`<div class="wd ${k===TKEY?'today':''}"><b>${WD[d.getDay()]}</b><i>${d.getDate()}</i>${on?'<span class="mark"></span>':''}</div>`;
+  }
+  const cardT=`<button class="card ${isTransDay?'':'off'} ${day.trans.done?'done':''}" onclick="go('trans')">
+      ${day.trans.done?'<div class="seal">完</div>':''}<div class="days">월 · 수 · 금</div>
+      <h3>영어 문장 10개 번역</h3><p>${doneCount()}/10 작성${day.trans.fb?' · 첨삭 완료':''}</p>
+      <div class="meter"><i style="width:${doneCount()*10}%"></i></div></button>`;
+  const cardK=`<button class="card ${isToeicDay?'':'off'} ${day.toeic.done?'done':''}" onclick="go('toeic')">
+      ${day.toeic.done?'<div class="seal">完</div>':''}<div class="days">화 · 목 · 토</div>
+      <h3>토익 LC 20문제</h3><p>${day.toeic.marks.filter(m=>m).length}/20 채점${day.toeic.done?` · ${day.toeic.marks.filter(m=>m===1).length}개 정답`:''}</p>
+      <div class="meter"><i style="width:${day.toeic.marks.filter(m=>m).length*5}%"></i></div></button>`;
+  const cardS=`<button class="card ${day.shadow.done?'done':''}" onclick="go('shadow')">
+      ${day.shadow.done?'<div class="seal">完</div>':''}<div class="days">매일</div>
+      <h3>인턴 쉐도잉 20분</h3><p>${fmt(day.shadow.sec)} 누적${day.shadow.at?` · ${esc(day.shadow.at)}`:''}</p>
+      <div class="meter"><i style="width:${Math.min(100,day.shadow.sec/12)}%"></i></div></button>`;
+
+  const todays=[isTransDay?cardT:'', isToeicDay?cardK:'', cardS].filter(Boolean);
+  const others=[!isTransDay?cardT:'', !isToeicDay?cardK:''].filter(Boolean);
+
+  app.innerHTML=`<div class="wrap">
+    <div class="top"><div>
+      <div class="eyebrow">${TODAY.getFullYear()}. ${pad(TODAY.getMonth()+1)}. ${pad(TODAY.getDate())} ${WD[DOW]}요일</div>
+      <h1>루틴 노트</h1></div>
+      <button class="gear" onclick="go('set')" aria-label="연동 설정">⚙</button></div>
+    <hr class="rule">
+    <div class="sync ${syncState==='ok'?'ok':syncState==='off'?'off':syncState==='busy'?'busy':''}" id="sync">${syncText()}</div>
+    <div class="week">${week}</div>
+    <div class="sec"><h2>오늘의 루틴</h2><span>${todays.length}개</span></div>
+    ${todays.join('')}
+    ${others.length?`<div class="sec" style="margin-top:26px"><h2>오늘은 쉬는 루틴</h2><span>미리 해도 기록됩니다</span></div>${others.join('')}`:''}
+  </div>`;
+  document.querySelectorAll('.seal').forEach(s=>s.classList.add('stamp'));
+}
+
+/* ── 번역 ── */
+async function ensureSet(){
+  if(day.trans.set.length===10) return;
+  busy=true; render();
+  day.trans.set = await newSet();
+  busy=false; await saveDay(); render();
+}
+function trans(){
+  if(busy) return shell(`<div class="ko"><span><span class="spin"></span>한국어 문장을 만드는 중…</span></div>`,'영어 문장 10개 번역','');
+  const s = day.trans.set[ti] || {ko:'',focus:''};
+  shell(`
+    <div class="dots">${day.trans.set.map((_,i)=>`<i class="${i===ti?'c':(day.trans.answers[i].trim()?'f':'')}"></i>`).join('')}</div>
+    <div class="ko">${esc(s.ko)}</div>
+    <div class="hintrow"><button class="hint ${hintOn?'on':''}" onclick="toggleHint()">${hintOn?esc(s.focus||'힌트 없음'):'힌트 보기'}</button></div>
+    <textarea class="en" id="en" placeholder="영어로 옮겨 적기" oninput="onEn(this.value)" spellcheck="false">${esc(day.trans.answers[ti])}</textarea>
+    <div class="nav">
+      <button class="btn" onclick="step(-1)" ${ti===0?'disabled':''}>← 이전</button>
+      ${ti===9?`<button class="btn solid" onclick="finishTrans()">10개 완료</button>`
+              :`<button class="btn solid" onclick="step(1)">다음 →</button>`}
+    </div>
+    <button class="btn ghost wide" onclick="regen()">새 문장 10개 받기</button>
+    ${errMsg?`<div class="err">${esc(errMsg)}</div>`:''}
+    ${day.trans.fb?fbHtml():''}
+    ${day.trans.done&&!day.trans.fb?`<button class="btn red wide" onclick="doGrade()">AI 첨삭 받기</button>`:''}
+  `,'영어 문장 10개 번역',`${ti+1} / 10`);
+  const t=document.getElementById('en'); if(t){ t.focus({preventScroll:true}); t.setSelectionRange(t.value.length,t.value.length); }
+}
+function fbHtml(){
+  return `<div class="sec" style="margin:26px 0 10px"><h2>첨삭</h2><span>모범답안 · 코멘트</span></div>`+
+    day.trans.fb.map(f=>{const i=(f.i||0)-1, ko=day.trans.set[i]?day.trans.set[i].ko:'';
+      return `<div class="fb"><div class="n">${pad(f.i)}</div><div class="k">${esc(ko)}</div>
+        <div class="m">${esc(f.model)}</div><div class="y">내 답: ${esc(day.trans.answers[i]||'—')}</div>
+        <div class="c">${esc(f.note)}</div></div>`;}).join('');
+}
+function toggleHint(){ hintOn=!hintOn; render(); }
+function onEn(v){ day.trans.answers[ti]=v; clearTimeout(onEn._t); onEn._t=setTimeout(saveDay,500); }
+function step(n){ ti=Math.max(0,Math.min(9,ti+n)); hintOn=false; saveDay(); render(); }
+async function regen(){
+  day.trans.set=[]; day.trans.answers=Array(10).fill(''); day.trans.fb=null; day.trans.done=false; ti=0;
+  await saveDay(); await ensureSet();
+}
+async function finishTrans(){ day.trans.done=true; await saveDay(); render(); window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); }
+async function doGrade(){
+  errMsg='';
+  const b=document.querySelector('.btn.red'); if(b){ b.disabled=true; b.innerHTML='<span class="spin"></span>첨삭하는 중…'; }
+  const fb=await grade();
+  if(!fb) errMsg='첨삭을 받지 못했습니다. 연동 설정에서 웹앱 주소와 API 키를 확인한 뒤 다시 눌러 주세요.';
+  else day.trans.fb=fb.sort((a,b)=>a.i-b.i);
+  await saveDay(); render();
+}
+
+/* ── 토익 ── */
+function toeic(){
+  const o=day.toeic.marks.filter(m=>m===1).length, dn=day.toeic.marks.filter(m=>m).length;
+  shell(`
+    <div class="score"><b>${o}</b><em>/ 20 정답 · ${dn}문항 채점</em></div>
+    <div class="qgrid">${day.toeic.marks.map((m,i)=>`<button class="q ${m===1?'o':m===2?'x':''}" onclick="mark(${i})"><span>${pad(i+1)}</span></button>`).join('')}</div>
+    <p class="note" style="margin-top:0">번호를 누를 때마다 <b>미표시 → ○ → ×</b> 로 바뀝니다.</p>
+    <label class="lbl">틀린 문항 메모</label>
+    <textarea class="memo" rows="4" placeholder="예) 6번 Part1 사람 없는 사진, 12번 시제 혼동" oninput="onMemo(this.value)">${esc(day.toeic.memo)}</textarea>
+    <button class="btn ${day.toeic.done?'':'solid'} wide" style="margin-top:18px" onclick="finishToeic()">${day.toeic.done?'기록 완료됨 · 다시 열기':'오늘 20문제 완료'}</button>
+  `,'토익 LC 20문제',`${dn} / 20`);
+}
+function mark(i){ day.toeic.marks[i]=(day.toeic.marks[i]+1)%3; saveDay(); render(); }
+function onMemo(v){ day.toeic.memo=v; clearTimeout(onMemo._t); onMemo._t=setTimeout(saveDay,500); }
+function finishToeic(){ day.toeic.done=!day.toeic.done; saveDay(); render(); }
+
+/* ── 쉐도잉 ── */
+const GOAL=1200; let tick=null, startAt=null;
+const fmt=s=>`${pad(Math.floor(s/60))}:${pad(s%60)}`;
+function shadow(){
+  const left=Math.max(0,GOAL-day.shadow.sec), C=2*Math.PI*94, off=C*(1-Math.min(1,day.shadow.sec/GOAL));
+  shell(`
+    <div class="clock"><div class="ring">
+      <svg width="210" height="210">
+        <circle cx="105" cy="105" r="94" fill="none" stroke="rgba(63,107,78,.16)" stroke-width="7"/>
+        <circle cx="105" cy="105" r="94" fill="none" stroke="${left?'#17231D':'#C8402E'}" stroke-width="7"
+                stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${off}"/>
+      </svg>
+      <div class="t"><b>${fmt(left)}</b><span>${tick?'듣는 중':left?'남은 시간':'20분 달성'}</span></div>
+    </div></div>
+    <button class="btn solid wide" onclick="toggleTimer()">${tick?'멈추기':(day.shadow.sec?'이어서 듣기':'시작하기')}</button>
+    <button class="btn ghost wide" onclick="resetTimer()">오늘 기록 초기화</button>
+    <label class="lbl">멈춘 지점 / 오늘 장면</label>
+    <input class="memo" value="${esc(day.shadow.at)}" placeholder="예) 00:12:30 벤이 첫 출근하는 장면" oninput="onAt(this.value)">
+    <p class="note">20분을 채우면 오늘 칸에 도장이 찍힙니다.</p>
+  `,'인턴 쉐도잉 20분',`${fmt(day.shadow.sec)} 누적`);
+}
+function toggleTimer(){
+  if(tick){ stopTimer(); }
+  else{
+    startAt=Date.now();
+    tick=setInterval(()=>{
+      const el=Math.floor((Date.now()-startAt)/1000); startAt=Date.now();
+      day.shadow.sec+=el;
+      if(day.shadow.sec>=GOAL){ day.shadow.sec=GOAL; day.shadow.done=true; stopTimer(); }
+      if(view==='shadow') render();
+    },1000);
+  }
+  render();
+}
+function stopTimer(){ clearInterval(tick); tick=null; saveDay(); }
+function resetTimer(){ stopTimer(); day.shadow.sec=0; day.shadow.done=false; saveDay(); render(); }
+function onAt(v){ day.shadow.at=v; clearTimeout(onAt._t); onAt._t=setTimeout(saveDay,500); }
+
+/* ── 연동 설정 ── */
+let setMsg='';
+function settings(){
+  shell(`
+    <p class="note" style="margin:0 0 18px">Apps Script 웹앱 주소와 토큰을 넣으면 이 기기의 기록이 구글 시트로 올라가고, 다른 기기에서도 같은 기록을 이어서 씁니다. 이 값은 기기 안에만 저장되며 어디에도 공개되지 않습니다.</p>
+    <label class="lbl">웹앱 주소</label>
+    <input class="memo" id="u" value="${esc(cfg.url)}" placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="off" spellcheck="false">
+    <label class="lbl">비밀 토큰</label>
+    <input class="memo" id="t" value="${esc(cfg.token)}" placeholder="Code.gs 의 TOKEN 과 같은 값" autocapitalize="off" spellcheck="false">
+    ${setMsg?`<div class="${setMsg.ok?'ok':'err'}">${esc(setMsg.text)}</div>`:''}
+    <button class="btn solid wide" style="margin-top:18px" onclick="saveCfg()">저장하고 연결 확인</button>
+    ${cfg.url?`<button class="btn ghost wide" onclick="clearCfg()">연동 끊기</button>`:''}
+  `,'연동 설정','');
+}
+async function saveCfg(){
+  cfg = { url: document.getElementById('u').value.trim().replace(/\/$/,''), token: document.getElementById('t').value.trim() };
+  await local.set('cfg', cfg);
+  setMsg=''; render();
+  const b=document.querySelector('.btn.solid'); if(b){ b.disabled=true; b.innerHTML='<span class="spin"></span>확인하는 중…'; }
+  try{
+    const r=await fetch(cfg.url+'?token='+encodeURIComponent(cfg.token)+'&action=all');
+    const d=await r.json();
+    if(!d.ok) throw new Error(d.error||'응답 오류');
+    setMsg={ok:true,text:'연결됐습니다. 지금부터 기록이 시트에 함께 저장됩니다.'};
+    await pull(); dirty.add('day:'+TKEY); dirty.add('log'); await push();
+  }catch(e){
+    setMsg={ok:false,text:'연결하지 못했습니다. 주소가 /exec 로 끝나는지, 배포 액세스가 "모든 사용자"인지, 토큰이 같은지 확인해 주세요.'};
+  }
+  render();
+}
+async function clearCfg(){ cfg={url:'',token:''}; await local.set('cfg',cfg); setMsg={ok:true,text:'연동을 껐습니다. 기록은 이 기기에 남아 있습니다.'}; render(); }
+
+/* ── 껍데기 / 이동 ── */
+function shell(body,title,count){
+  app.innerHTML=`<div class="sheet"><div class="wrap">
+    <div class="bar"><button class="back" onclick="go('home')">← 루틴 노트</button><div class="count">${count}</div></div>
+    <h1 style="font-size:22px;margin-bottom:16px">${title}</h1>${body}</div></div>`;
+}
+function go(v){
+  if(v!=='shadow'&&tick) stopTimer();
+  view=v; errMsg=''; if(v!=='set') setMsg='';
+  if(v==='trans'){ hintOn=false; render(); ensureSet(); return; }
+  render();
+  if(v==='home' && cfg.url) push();
+}
+Object.assign(window,{go,step,onEn,toggleHint,regen,finishTrans,doGrade,mark,onMemo,finishToeic,toggleTimer,resetTimer,onAt,saveCfg,clearCfg});
+
+/* ── 안드로이드 홈 화면 추가용 매니페스트 ── */
+try{
+  const mf = {name:'루틴 노트', short_name:'루틴', display:'standalone', background_color:'#F1F3EA', theme_color:'#F1F3EA', start_url:'.',
+    icons:[{src:'data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="#F1F3EA"/><circle cx="256" cy="256" r="150" fill="none" stroke="#C8402E" stroke-width="18"/><text x="256" y="318" font-size="200" text-anchor="middle" fill="#C8402E" font-family="serif">完</text></svg>`))),
+      sizes:'512x512', type:'image/svg+xml'}]};
+  const l=document.createElement('link'); l.rel='manifest';
+  l.href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
+  document.head.appendChild(l);
+}catch(e){}
+
+/* ── 부팅 ── */
+(async function boot(){
+  cfg = (await local.get('cfg')) || {url:'',token:''};
+  day = Object.assign(blank(), await local.get('day:'+TKEY));
+  log = (await local.get('log')) || {};
+  render();
+  if(cfg.url) pull();
+})();
+</script>
+</html>
